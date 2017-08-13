@@ -19,7 +19,7 @@ class AWSDynDns(object):
             self.external_ip = json.loads(self.external_ip_request)['origin']
             print "Found external IP: {0}".format(self.external_ip)
         except Exception as e:
-            raise "error getting external IP"
+            raise StandardError("error getting external IP")
 
     def check_existing_record(self):
         """ Get current external IP address """
@@ -34,21 +34,21 @@ class AWSDynDns(object):
 
         found_flag = False
 
+        if len(response['ResourceRecordSets']) == 0:
+            raise StandardError("Could not find any records matching domain: {0}".format(self.fqdn))
+
         if self.fqdn in response['ResourceRecordSets'][0]['Name']:
             for ip in response['ResourceRecordSets'][0]['ResourceRecords']:
                 if self.external_ip == ip['Value']:
                     found_flag = True
         else:
-            raise("Cannot find record set for domain: {0}".format(self.fqdn))
+            raise StandardError("Cannot find record set for domain: {0}".format(self.fqdn))
 
         return found_flag
 
-           
-            
-
     def update_record(self):
         if self.check_existing_record():
-            print "IP is up to date"
+             print "IP is already up to date"
         else:
             response = self.client.change_resource_record_sets(
                 HostedZoneId=self.hosted_zone_id,
@@ -72,7 +72,6 @@ class AWSDynDns(object):
                 }
             )
             print response
-
 
 
 if __name__ == "__main__":
