@@ -5,8 +5,13 @@ import argparse
 
 
 class AWSDynDns(object):
-    def __init__(self):
+    def __init__(self, region, domain, subdomain, hosted_zone_id):
         self.ip_service = "http://httpbin.org/ip"
+        self.client = boto3.client('route53')
+        self.domain = domain
+        self.subdomain = subdomain
+        self.hosted_zone_id = hosted_zone_id
+        self.fqdn = "{0}.{1}".format(self.subdomain, self.domain)
 
     def get_external_ip(self):
         try:
@@ -16,36 +21,62 @@ class AWSDynDns(object):
         except Exception as e:
             raise "error getting external IP"
 
-    def update_record(self, region, domain, subdomain, hosted_zone_id):
+    def check_existing_record(self):
+        """ Get current external IP address """
         self.get_external_ip()
-        client = boto3.client('route53')
-        response = client.change_resource_record_sets(
-            HostedZoneId=hosted_zone_id,
-            ChangeBatch={
-                'Comment': 'string',
-                'Changes': [
-                    {
-                        'Action': 'UPSERT',
-                        'ResourceRecordSet': {
-                            'Name': '{0}.{1}'.format(subdomain, domain),
-                            'Type': 'A',
-                            'TTL': 123,
-                            'ResourceRecords': [
-                                {
-                                    'Value': self.external_ip
-                                },
-                            ],
-                        }
-                    },
-                ]
-            }
-        )
-        print response
+
+        """ Check for existing record and if it needs to be modified """
+        response = self.client.list_resource_record_sets(
+            HostedZoneId=self.hosted_zone_id,
+            StartRecordName=self.fqdn,
+            StartRecordType='A',
+        ) 
+
+        found_flag = False
+
+        if self.fqdn in response['ResourceRecordSets'][0]['Name']:
+            for ip in response['ResourceRecordSets'][0]['ResourceRecords']:
+                if self.external_ip == ip['Value']:
+                    found_flag = True
+        else:
+            raise("Cannot find record set for domain: {0}".format(self.fqdn))
+
+        return found_flag
+
+           
+            
+
+    def update_record(self):
+        if self.check_existing_record():
+            print "IP is up to date"
+        else:
+            response = self.client.change_resource_record_sets(
+                HostedZoneId=self.hosted_zone_id,
+                ChangeBatch={
+                    'Comment': 'string',
+                    'Changes': [
+                        {
+                            'Action': 'UPSERT',
+                            'ResourceRecordSet': {
+                                'Name': self.fqdn,
+                                'Type': 'A',
+                                'TTL': 123,
+                                'ResourceRecords': [
+                                    {
+                                        'Value': self.external_ip
+                                    },
+                                ],
+                            }
+                        },
+                    ]
+                }
+            )
+            print response
 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Update an AWS route53 DNS record with your external IP")
+    parser = argparse.ArgumentParser(description="Manage a dynamic home IP address with an AWS hosted route53 domain")
 
     parser.add_argument(
         "--region", "-r",
@@ -74,5 +105,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    run = AWSDynDns()
-    run.update_record(args.region, args.domain, args.subdomain, args.zone)
+    run = AWSDynDns(args.region, args.domain, args.subdomain, args.zone)
+    run.update_record()
