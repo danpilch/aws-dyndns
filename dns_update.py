@@ -11,7 +11,10 @@ class AWSDynDns(object):
         self.domain = domain
         self.subdomain = subdomain
         self.hosted_zone_id = hosted_zone_id
-        self.fqdn = "{0}.{1}".format(self.subdomain, self.domain)
+        if self.subdomain:
+            self.fqdn = "{0}.{1}".format(self.subdomain, self.domain)
+        else:
+            self.fqdn = self.domain
 
     def get_external_ip(self):
         try:
@@ -30,7 +33,7 @@ class AWSDynDns(object):
             HostedZoneId=self.hosted_zone_id,
             StartRecordName=self.fqdn,
             StartRecordType='A',
-        ) 
+        )
 
         found_flag = False
 
@@ -93,9 +96,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--subdomain", "-s",
         help="subdomain to modify",
-        required=True
+        required=False
     )
-    
+
     parser.add_argument(
         "--zone", "-z",
         help="AWS hosted zone id",
