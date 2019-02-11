@@ -7,12 +7,11 @@ import os
 os.environ['AWS_PROFILE'] = "ddns"
 
 class AWSDynDns(object):
-    def __init__(self, region, domain, subdomain, hostname, hosted_zone_id):
+    def __init__(self, region, domain, subdomain, hosted_zone_id):
         self.ip_service = "http://httpbin.org/ip"
         self.client = boto3.client('route53')
         self.domain = domain
         self.subdomain = subdomain
-        self.hostname = hostname
         self.hosted_zone_id = hosted_zone_id
         if self.subdomain:
             self.fqdn = "{0}.{1}".format(self.subdomain, self.domain)
@@ -103,12 +102,6 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--hostname",
-        help="Hostname to modify",
-        required=False
-    )
-
-    parser.add_argument(
         "--zone", "-z",
         default="Z31IS2RBRR7PFA",
         help="AWS hosted zone id",
@@ -117,5 +110,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    run = AWSDynDns(args.region, args.domain, args.subdomain, args.hostname, args.zone)
+    run = AWSDynDns(args.region, args.domain, args.subdomain, args.zone)
     run.update_record()
