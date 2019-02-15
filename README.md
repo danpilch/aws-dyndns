@@ -1,6 +1,9 @@
-# aws-dyndns
+aws-dyndns
+=====
+
 Manage a dynamic home IP address with an AWS hosted route53 domain
 
+# usage
 ```
 usage: dns_update.py [-h] --domain DOMAIN [--subdomain SUBDOMAIN]
                      [--hostname HOSTNAME] [--zone ZONE]
