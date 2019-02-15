@@ -3,6 +3,10 @@ aws-dyndns
 
 Manage a dynamic home IP address with an AWS hosted route53 domain
 
+# setup
+Create a new IAM policy using `ddns_iam_policy.json` as a base
+
+
 # usage
 ```
 usage: dns_update.py [-h] --domain DOMAIN [--subdomain SUBDOMAIN]
