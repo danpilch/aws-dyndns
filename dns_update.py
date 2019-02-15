@@ -28,7 +28,10 @@ class AWSDynDns(object):
 
     def get_hosted_zone_id(self):
         try:
-            self.hosted_zone_list = self.client.list_hosted_zones_by_name(self.domain)
+            self.hosted_zone_list = self.client.list_hosted_zones_by_name()['HostedZones']
+            for zone in self.hosted_zone_list:
+                if self.domain in zone['Name']:
+                    self.hosted_zone_id = zone['Id'].split('/')[2]
         except Exception:
             raise Exception("error getting hosted zone ID")
 
@@ -59,6 +62,9 @@ class AWSDynDns(object):
         return found_flag
 
     def update_record(self):
+        if not self.hosted_zone_id:
+            self.get_hosted_zone_id()
+
         if self.check_existing_record():
              print("IP is already up to date")
         else:
@@ -110,7 +116,6 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--zone", "-z",
-        default="Z146SLT10RYHLZ",
         help="AWS hosted zone id",
         required=False
     )
