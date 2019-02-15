@@ -90,14 +90,12 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--domain", "-d",
-        default="robertellegate.com",
         help="Domain to modify",
-        required=False
+        required=True
     )
 
     parser.add_argument(
         "--subdomain", "-s",
-        default="surface",
         help="Subdomain to modify",
         required=False
     )
