@@ -3,8 +3,6 @@ import requests
 import argparse
 import os
 
-os.environ['AWS_PROFILE'] = "ddns"
-
 class AWSDynDns(object):
     def __init__(self, domain, subdomain, hosted_zone_id):
         self.ip_service = "http://httpbin.org/ip"
@@ -55,8 +53,8 @@ class AWSDynDns(object):
             for ip in response['ResourceRecordSets'][0]['ResourceRecords']:
                 if self.external_ip == ip['Value']:
                     found_flag = True
-        # else:
-        #     raise Exception("Cannot find record set for domain: {0}".format(self.fqdn))
+        else:
+            raise Exception("Cannot find record set for domain: {0}".format(self.fqdn))
 
         return found_flag
 
@@ -96,6 +94,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage a dynamic home IP address with an AWS hosted route53 domain")
 
     parser.add_argument(
+        "--profile","-p",
+        default='ddns',
+        help="Specify a AWS CLI credential profile",
+        required=False
+    )
+
+    parser.add_argument(
         "--domain", "-d",
         help="Domain to modify",
         required=True
@@ -114,6 +119,12 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    try:
+        os.environ['AWS_PROFILE'] = args.profile
+        boto3.client('route53')
+    except Exception:
+        raise Exception("error loading AWS credential profile {}".format(args.profile))
 
     run = AWSDynDns(args.domain, args.subdomain, args.zone)
     run.update_record()
