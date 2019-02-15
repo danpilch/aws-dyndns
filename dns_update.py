@@ -124,7 +124,7 @@ if __name__ == "__main__":
         os.environ['AWS_PROFILE'] = args.profile
         boto3.client('route53')
     except Exception:
-        raise Exception("error loading AWS credential profile {}".format(args.profile))
+        raise Exception("error loading AWS credential profile")
 
     run = AWSDynDns(args.domain, args.subdomain, args.zone)
     run.update_record()
