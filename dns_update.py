@@ -6,11 +6,12 @@ import os
 os.environ['AWS_PROFILE'] = "ddns"
 
 class AWSDynDns(object):
-    def __init__(self, region, domain, subdomain, hosted_zone_id):
+    def __init__(self, domain, subdomain, hostname, hosted_zone_id):
         self.ip_service = "http://httpbin.org/ip"
         self.client = boto3.client('route53')
         self.domain = domain
         self.subdomain = subdomain
+        self.hostname = hostname
         self.hosted_zone_id = hosted_zone_id
         if self.subdomain:
             self.fqdn = "{0}.{1}".format(self.subdomain, self.domain)
@@ -24,6 +25,12 @@ class AWSDynDns(object):
             print("Found external IP: {0}".format(self.external_ip))
         except Exception:
             raise Exception("error getting external IP")
+
+    def get_hosted_zone_id(self):
+        try:
+            self.hosted_zone_list = self.client.list_hosted_zones_by_name(self.domain)
+        except Exception:
+            raise Exception("error getting hosted zone ID")
 
     def check_existing_record(self):
         """ Get current external IP address """
@@ -39,14 +46,15 @@ class AWSDynDns(object):
         found_flag = False
 
         if len(response['ResourceRecordSets']) == 0:
-            raise Exception("Could not find any records matching domain: {0}".format(self.fqdn))
+            return found_flag
+            #raise Exception("Could not find any records matching domain: {0}".format(self.domain))
 
         if self.fqdn in response['ResourceRecordSets'][0]['Name']:
             for ip in response['ResourceRecordSets'][0]['ResourceRecords']:
                 if self.external_ip == ip['Value']:
                     found_flag = True
-        else:
-            raise Exception("Cannot find record set for domain: {0}".format(self.fqdn))
+        # else:
+        #     raise Exception("Cannot find record set for domain: {0}".format(self.fqdn))
 
         return found_flag
 
@@ -54,6 +62,7 @@ class AWSDynDns(object):
         if self.check_existing_record():
              print("IP is already up to date")
         else:
+            print("Updating resource record IP address")
             response = self.client.change_resource_record_sets(
                 HostedZoneId=self.hosted_zone_id,
                 ChangeBatch={
@@ -75,18 +84,11 @@ class AWSDynDns(object):
                     ]
                 }
             )
-            print(response)
+            print("Status: {}".format(response['ChangeInfo']['Status']))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage a dynamic home IP address with an AWS hosted route53 domain")
-
-    parser.add_argument(
-        "--region", "-r",
-        default="us-east-1",
-        help="AWS region to connect to",
-        required=False
-    )
 
     parser.add_argument(
         "--domain", "-d",
@@ -101,13 +103,19 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--hostname",
+        help="Hostname to modify",
+        required=False
+    )
+
+    parser.add_argument(
         "--zone", "-z",
-        default="Z31IS2RBRR7PFA",
+        default="Z146SLT10RYHLZ",
         help="AWS hosted zone id",
         required=False
     )
 
     args = parser.parse_args()
 
-    run = AWSDynDns(args.region, args.domain, args.subdomain, args.zone)
+    run = AWSDynDns(args.domain, args.subdomain, args.hostname, args.zone)
     run.update_record()
