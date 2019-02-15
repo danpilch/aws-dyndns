@@ -43,17 +43,18 @@ By default, `dns_update.py` will use the **ddns** credential profile. You can ch
 # usage
 ```
 usage: dns_update.py [-h] [--profile PROFILE] --domain DOMAIN
-                     [--subdomain SUBDOMAIN] [--zone ZONE]
+                     [--record RECORD] [--zone ZONE] [--ttl TTL]
 
 Manage a dynamic home IP address with an AWS hosted route53 domain
 
 optional arguments:
   -h, --help            show this help message and exit
   --profile PROFILE, -p PROFILE
-                        Specify a AWS CLI credential profile
+                        AWS credential profile
   --domain DOMAIN, -d DOMAIN
                         Domain to modify
-  --subdomain SUBDOMAIN, -s SUBDOMAIN
-                        Subdomain to modify
+  --record RECORD, -r RECORD
+                        Record to modify
   --zone ZONE, -z ZONE  AWS hosted zone id
+  --ttl TTL             Record TTL
 ```
