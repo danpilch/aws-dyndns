@@ -1,6 +1,5 @@
 import boto3
-import json
-import urllib.request as urllib
+import requests
 import argparse
 import os
 
@@ -20,8 +19,8 @@ class AWSDynDns(object):
 
     def get_external_ip(self):
         try:
-            self.external_ip_request = urllib.urlopen(self.ip_service).read()
-            self.external_ip = json.loads(self.external_ip_request)['origin']
+            self.external_ip_request = requests.get(self.ip_service)
+            self.external_ip = self.external_ip_request.json()['origin']
             print("Found external IP: {0}".format(self.external_ip))
         except Exception:
             raise Exception("error getting external IP")
@@ -91,12 +90,14 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--domain", "-d",
+        default="robertellegate.com",
         help="Domain to modify",
-        required=True
+        required=False
     )
 
     parser.add_argument(
         "--subdomain", "-s",
+        default="surface",
         help="Subdomain to modify",
         required=False
     )
