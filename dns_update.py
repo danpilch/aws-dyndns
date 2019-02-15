@@ -1,17 +1,18 @@
 import boto3
 import requests
 import argparse
-import os
 
 class AWSDynDns(object):
-    def __init__(self, domain, subdomain, hosted_zone_id):
+    def __init__(self, domain, record, hosted_zone_id, profile_name, ttl):
         self.ip_service = "http://httpbin.org/ip"
-        self.client = boto3.client('route53')
+        session = boto3.Session(profile_name=profile_name)
+        self.client = session.client('route53')
         self.domain = domain
-        self.subdomain = subdomain
+        self.record = record
+        self.ttl = ttl
         self.hosted_zone_id = hosted_zone_id
-        if self.subdomain:
-            self.fqdn = "{0}.{1}".format(self.subdomain, self.domain)
+        if self.record:
+            self.fqdn = "{0}.{1}".format(self.record, self.domain)
         else:
             self.fqdn = self.domain
 
@@ -76,7 +77,7 @@ class AWSDynDns(object):
                             'ResourceRecordSet': {
                                 'Name': self.fqdn,
                                 'Type': 'A',
-                                'TTL': 123,
+                                'TTL': self.ttl,
                                 'ResourceRecords': [
                                     {
                                         'Value': self.external_ip
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--profile","-p",
         default='ddns',
-        help="Specify a AWS CLI credential profile",
+        help="AWS credential profile",
         required=False
     )
 
@@ -107,8 +108,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--subdomain", "-s",
-        help="Subdomain to modify",
+        "--record", "-r",
+        help="Record to modify",
         required=False
     )
 
@@ -118,13 +119,14 @@ if __name__ == "__main__":
         required=False
     )
 
+    parser.add_argument(
+        "--ttl",
+        default=300,
+        help="Record TTL",
+        required=False
+    )
+
     args = parser.parse_args()
 
-    try:
-        os.environ['AWS_PROFILE'] = args.profile
-        boto3.client('route53')
-    except Exception:
-        raise Exception("error loading AWS credential profile")
-
-    run = AWSDynDns(args.domain, args.subdomain, args.zone)
+    run = AWSDynDns(args.domain, args.record, args.zone, args.profile, args.ttl)
     run.update_record()
