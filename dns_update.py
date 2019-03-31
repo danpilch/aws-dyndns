@@ -19,7 +19,10 @@ class AWSDynDns(object):
     def get_external_ip(self):
         try:
             self.external_ip_request = requests.get(self.ip_service)
-            self.external_ip = self.external_ip_request.json()['origin']
+            if "," in self.external_ip_request.json()['origin']:
+                self.external_ip = self.external_ip_request.json()['origin'].split(',')[0]
+            else:
+                self.external_ip = self.external_ip_request.json()['origin']
             print("Found external IP: {0}".format(self.external_ip))
         except Exception:
             raise Exception("error getting external IP")
